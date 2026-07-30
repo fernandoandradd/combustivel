@@ -20,9 +20,9 @@ st.set_page_config(
 FRETE_PADRAO = 0.17
 
 PRODUTOS = [
-    ("Gasolina Comum", "#E8A317", 5.8500, 6.2900),
-    ("Diesel S10", "#2F9E68", 5.9500, 6.4900),
-    ("Diesel S500", "#7B8794", 5.8000, 6.3500),
+    ("Gasolina Comum", "#E8A317", 6.1100, 7.1900),
+    ("Diesel S10", "#2F9E68", 7.1400, 7.4900),
+    ("Diesel S500", "#7B8794", 6.1500, 7.1900),
 ]
 
 st.markdown(
