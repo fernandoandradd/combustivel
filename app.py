@@ -18,11 +18,13 @@ st.set_page_config(
 )
 
 FRETE_PADRAO = 0.17
+IRPJ_PADRAO = 0.24   # % sobre a receita bruta
+CSLL_PADRAO = 1.20   # % sobre a receita bruta
 
 PRODUTOS = [
-    ("Gasolina Comum", "#E8A317", 5.9400, 7.1900),
-    ("Diesel S10", "#2F9E68", 6.9700, 7.4900),
-    ("Diesel S500", "#7B8794", 5.9800, 7.1900),
+    ("Gasolina Comum", "#E8A317", 5.8500, 6.2900),
+    ("Diesel S10", "#2F9E68", 5.9500, 6.4900),
+    ("Diesel S500", "#7B8794", 5.8000, 6.3500),
 ]
 
 st.markdown(
@@ -47,36 +49,44 @@ h1.topo {
     padding-left: 10px;
     margin: 0 0 .7rem 0;
 }
+.rotulo.cinza { border-left-color: #C3CBD4; font-weight: 600; color: #46525F; }
 
-.resultado {
+.painel {
     background: #11181F;
     border-radius: 10px;
     padding: 12px 14px;
     margin-top: .4rem;
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 10px;
-    flex-wrap: wrap;
 }
-.resultado .bloco { display: flex; flex-direction: column; }
-.resultado .rot {
-    font-size: .68rem;
-    letter-spacing: .1em;
+.linha {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+.linha + .linha {
+    border-top: 1px solid #2B3644;
+    margin-top: 10px;
+    padding-top: 10px;
+}
+.bloco { display: flex; flex-direction: column; min-width: 0; }
+.rot {
+    font-size: .64rem;
+    letter-spacing: .08em;
     text-transform: uppercase;
     color: #8A99AB;
     font-weight: 600;
+    white-space: nowrap;
 }
-.resultado .val {
-    font-size: 1.05rem;
+.val {
+    font-size: .98rem;
     font-weight: 700;
     color: #FFFFFF;
     font-variant-numeric: tabular-nums;
 }
-.resultado .destaque { font-size: 1.5rem; color: var(--cor); }
-.resultado.negativa .destaque { color: #FF6B5A; }
+.val.bruta { color: var(--cor); }
+.val.liquido { font-size: 1.32rem; color: var(--cor); }
+.val.imposto { color: #B9C4D0; font-weight: 600; }
+.painel.negativa .val.bruta, .painel.negativa .val.liquido { color: #FF6B5A; }
 
-/* campos maiores para toque */
 div[data-testid="stNumberInput"] input { font-size: 1rem; padding: .5rem .6rem; }
 div[data-testid="stNumberInput"] label { font-size: .78rem; color: #5A6672; }
 </style>
@@ -90,7 +100,22 @@ def num_br(valor, casas=4):
     return texto.replace(",", "@").replace(".", ",").replace("@", ".")
 
 
-st.markdown('<h1 class="topo">Margem bruta de combustíveis</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="topo">Margem de combustíveis</h1>', unsafe_allow_html=True)
+
+with st.container(border=True):
+    st.markdown(
+        '<div class="rotulo cinza">Impostos sobre a receita</div>',
+        unsafe_allow_html=True,
+    )
+    t1, t2 = st.columns(2)
+    irpj_pct = t1.number_input(
+        "IRPJ (%)", min_value=0.0, value=IRPJ_PADRAO, step=0.01,
+        format="%.2f", key="irpj_pct",
+    )
+    csll_pct = t2.number_input(
+        "CSLL (%)", min_value=0.0, value=CSLL_PADRAO, step=0.01,
+        format="%.2f", key="csll_pct",
+    )
 
 for nome, cor, compra_ini, venda_ini in PRODUTOS:
     chave = nome.lower().replace(" ", "_")
@@ -117,22 +142,29 @@ for nome, cor, compra_ini, venda_ini in PRODUTOS:
         custo = compra + frete
         margem = venda - custo
         pct = (margem / venda * 100) if venda else 0.0
-        classe = "resultado negativa" if margem < 0 else "resultado"
+        irpj = venda * irpj_pct / 100
+        csll = venda * csll_pct / 100
+        liquido = margem - irpj - csll
+        classe = "painel negativa" if liquido < 0 else "painel"
 
         st.markdown(
             f"""
 <div class="{classe}" style="--cor:{cor}">
-    <div class="bloco">
-        <span class="rot">Custo</span>
-        <span class="val">R$ {num_br(custo)}</span>
+    <div class="linha">
+        <div class="bloco"><span class="rot">Custo</span>
+            <span class="val">R$ {num_br(custo)}</span></div>
+        <div class="bloco"><span class="rot">Margem bruta</span>
+            <span class="val bruta">R$ {num_br(margem)}</span></div>
+        <div class="bloco"><span class="rot">Margem %</span>
+            <span class="val bruta">{num_br(pct, 2)}%</span></div>
     </div>
-    <div class="bloco">
-        <span class="rot">Margem R$</span>
-        <span class="val destaque">{num_br(margem)}</span>
-    </div>
-    <div class="bloco">
-        <span class="rot">Margem %</span>
-        <span class="val destaque">{num_br(pct, 2)}%</span>
+    <div class="linha">
+        <div class="bloco"><span class="rot">IRPJ</span>
+            <span class="val imposto">R$ {num_br(irpj)}</span></div>
+        <div class="bloco"><span class="rot">CSLL</span>
+            <span class="val imposto">R$ {num_br(csll)}</span></div>
+        <div class="bloco"><span class="rot">Lucro líquido</span>
+            <span class="val liquido">R$ {num_br(liquido)}</span></div>
     </div>
 </div>
 """,
