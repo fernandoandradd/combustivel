@@ -22,9 +22,9 @@ IRPJ_PADRAO = 0.24   # % sobre a receita bruta
 CSLL_PADRAO = 1.20   # % sobre a receita bruta
 
 PRODUTOS = [
-    ("Gasolina Comum", "#E8A317", 5.8500, 6.2900),
-    ("Diesel S10", "#2F9E68", 5.9500, 6.4900),
-    ("Diesel S500", "#7B8794", 5.8000, 6.3500),
+    ("Gasolina Comum", "#E8A317", 5.9400, 7.1900),
+    ("Diesel S10", "#2F9E68", 6.9700, 7.4900),
+    ("Diesel S500", "#7B8794", 5.9800, 7.1900),
 ]
 
 st.markdown(
@@ -83,7 +83,14 @@ h1.topo {
     font-variant-numeric: tabular-nums;
 }
 .val.bruta { color: var(--cor); }
-.val.liquido { font-size: 1.32rem; color: var(--cor); }
+.val.liquido { font-size: 1.32rem; color: var(--cor); line-height: 1.15; }
+.sub {
+    font-size: .82rem;
+    font-weight: 700;
+    color: var(--cor);
+    font-variant-numeric: tabular-nums;
+}
+.painel.negativa .sub { color: #FF6B5A; }
 .val.imposto { color: #B9C4D0; font-weight: 600; }
 .painel.negativa .val.bruta, .painel.negativa .val.liquido { color: #FF6B5A; }
 
@@ -145,6 +152,7 @@ for nome, cor, compra_ini, venda_ini in PRODUTOS:
         irpj = venda * irpj_pct / 100
         csll = venda * csll_pct / 100
         liquido = margem - irpj - csll
+        pct_liquido = (liquido / venda * 100) if venda else 0.0
         classe = "painel negativa" if liquido < 0 else "painel"
 
         st.markdown(
@@ -164,7 +172,8 @@ for nome, cor, compra_ini, venda_ini in PRODUTOS:
         <div class="bloco"><span class="rot">CSLL</span>
             <span class="val imposto">R$ {num_br(csll)}</span></div>
         <div class="bloco"><span class="rot">Lucro líquido</span>
-            <span class="val liquido">R$ {num_br(liquido)}</span></div>
+            <span class="val liquido">R$ {num_br(liquido)}</span>
+            <span class="sub">{num_br(pct_liquido, 2)}%</span></div>
     </div>
 </div>
 """,
